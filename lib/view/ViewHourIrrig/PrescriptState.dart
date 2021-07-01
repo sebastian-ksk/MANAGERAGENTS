@@ -12,8 +12,8 @@ class PrescriptionState extends StatefulWidget {
 
 class _PrescriptionStateState extends State<PrescriptionState> {
   var gradientColor = GradientTemplate.gradientTemplate[0].colors;
-  String value = 'False';
-  List<String> menu = ['True', 'False'];
+  String valueNegotiation;
+  List<String> menuNegotiation = ['True', 'False'];
   String valueModePresc = 'Better';
   List<String> menuTypePresc = [
     'Weather_Station',
@@ -22,6 +22,7 @@ class _PrescriptionStateState extends State<PrescriptionState> {
   ];
   var colorMetodPresc = 0;
   var colorNegotiation = 0;
+
   bool _presDone = false;
   IrrPrescModel irrPrescModel;
   ResultPrescIrrModel resultPrescIrrModel;
@@ -29,6 +30,20 @@ class _PrescriptionStateState extends State<PrescriptionState> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   CollectionReference users =
       FirebaseFirestore.instance.collection('Tibasosa_3');
+
+  @override
+  void initState() {
+    super.initState();
+    _parameterInitializacon();
+  }
+
+  _parameterInitializacon() async {
+    irrPrescModel = await GetFirebaseIrrPresc().ConsultIrrPresc();
+    valueNegotiation = irrPrescModel.negotiation;
+    colorNegotiation = menuNegotiation.indexOf(valueNegotiation) == 1 ? 0 : 1;
+    valueModePresc = irrPrescModel.prescriptionMethod;
+    colorMetodPresc = menuTypePresc.indexOf(valueModePresc) + 2;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,15 +77,16 @@ class _PrescriptionStateState extends State<PrescriptionState> {
                   'Date Prescrtiption :',
                   snapshot.data?.lastPrescriptionDate?.toString() ??
                       'No Date Found '),
-              _downListMenu(colorNegotiation, menu, value, (valuen) async {
+              _downListMenu(colorNegotiation, menuNegotiation, valueNegotiation,
+                  (valuen) async {
                 setState(() {
-                  value = valuen;
-                  _presDone = value == 'True' ? true : false;
-                  colorNegotiation = menu.indexOf(value) == 1 ? 0 : 1;
-                  print('change ' + value);
-                  irrPrescModel.negotiation = value;
-                  GetFirebaseIrrPresc()
-                      .ConsultIrrPresc('Irrigation-Prescription');
+                  valueNegotiation = valuen;
+                  _presDone = valueNegotiation == 'True' ? true : false;
+                  colorNegotiation =
+                      menuNegotiation.indexOf(valueNegotiation) == 1 ? 0 : 1;
+                  print('change ' + valueNegotiation);
+                  irrPrescModel.negotiation = valueNegotiation;
+
                   updateData('Negotiation', irrPrescModel.negotiation);
                 });
               }, 'Negotiation : '),
