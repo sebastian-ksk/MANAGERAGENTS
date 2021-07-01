@@ -1,24 +1,24 @@
-import 'package:managents/models/irrigHoursModel.dart';
+import 'package:managents/models/PrescHoursModel.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite/sqlite_api.dart';
 
-final String tableIrrigHour = 'alarm';
+final String tableIrrigHour = 'prescHour';
 final String columnId = 'id';
 final String columnTitle = 'title';
-final String columnDateTime = 'IrrigHourDateTime';
+final String columnDateTime = 'PrescHourDateTime';
 final String columnPending = 'isPending';
 final String columnColorIndex = 'gradientColorIndex';
 
-class HourIrrigDB {
+class HourPrescDB {
   static Database _database;
-  static HourIrrigDB _hourIrrigdb;
+  static HourPrescDB _hourPrescDB;
 
-  HourIrrigDB._createInstance();
-  factory HourIrrigDB() {
-    if (_hourIrrigdb == null) {
-      _hourIrrigdb = HourIrrigDB._createInstance();
+  HourPrescDB._createInstance();
+  factory HourPrescDB() {
+    if (_hourPrescDB == null) {
+      _hourPrescDB = HourPrescDB._createInstance();
     }
-    return _hourIrrigdb;
+    return _hourPrescDB;
   }
 
   Future<Database> get database async {
@@ -30,7 +30,7 @@ class HourIrrigDB {
 
   Future<Database> initializeDatabase() async {
     var dir = await getDatabasesPath();
-    var path = dir + "alarm.db";
+    var path = dir + "prescHour.db";
 
     var database = await openDatabase(
       path,
@@ -49,20 +49,20 @@ class HourIrrigDB {
     return database;
   }
 
-  void insertAlarm(IrrigHoursModel irrigHoursModel) async {
+  void insertAlarm(PrescHoursModel prescHoursModel) async {
     var db = await this.database;
-    var result = await db.insert(tableIrrigHour, irrigHoursModel.toMap());
+    var result = await db.insert(tableIrrigHour, prescHoursModel.toMap());
     print('result : $result');
   }
 
-  Future<List<IrrigHoursModel>> getAlarms() async {
-    List<IrrigHoursModel> _irrigHours = [];
+  Future<List<PrescHoursModel>> getHoursPresc() async {
+    List<PrescHoursModel> _irrigHours = [];
 
     var db = await this.database;
     var result = await db.query(tableIrrigHour);
     result.forEach((element) {
-      var irrigHoursModel = IrrigHoursModel.fromMap(element);
-      _irrigHours.add(irrigHoursModel);
+      var prescHoursModel = PrescHoursModel.fromMap(element);
+      _irrigHours.add(prescHoursModel);
     });
 
     return _irrigHours;

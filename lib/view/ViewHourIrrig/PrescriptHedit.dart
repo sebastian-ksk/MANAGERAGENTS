@@ -2,34 +2,34 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
-import 'package:managents/data/sql/Irrighoursdb.dart';
-import 'package:managents/models/irrigHoursModel.dart';
+import 'package:managents/data/sql/preschoursdb.dart';
+import 'package:managents/models/PrescHoursModel.dart';
 import 'package:managents/util/constans/theme_data.dart';
 
-class IrrigationHoursEdit extends StatefulWidget {
+class PrescriptionHoursEdit extends StatefulWidget {
   @override
-  _IrrigationHoursEditState createState() => _IrrigationHoursEditState();
+  _PrescriptionHoursEditState createState() => _PrescriptionHoursEditState();
 }
 
-class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
+class _PrescriptionHoursEditState extends State<PrescriptionHoursEdit> {
   DateTime _hourTime;
   String _hourTimeString;
-  HourIrrigDB _hourIrrigDB = HourIrrigDB();
-  Future<List<IrrigHoursModel>> _hoursIrrig;
-  List<IrrigHoursModel> _currentHoursI;
+  HourPrescDB _hourPrescDB = HourPrescDB();
+  Future<List<PrescHoursModel>> _hoursIrrig;
+  List<PrescHoursModel> _currentHoursI;
 
   @override
   void initState() {
     _hourTime = DateTime.now();
-    _hourIrrigDB.initializeDatabase().then((value) {
+    _hourPrescDB.initializeDatabase().then((value) {
       print('------database intialized');
-      loadIrrigHours();
+      loadPrescHours();
     });
     super.initState();
   }
 
-  void loadIrrigHours() {
-    _hoursIrrig = _hourIrrigDB.getAlarms();
+  void loadPrescHours() {
+    _hoursIrrig = _hourPrescDB.getHoursPresc();
     if (mounted) setState(() {});
   }
 
@@ -49,7 +49,7 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
                 fontSize: 24),
           ),
           Expanded(
-            child: FutureBuilder<List<IrrigHoursModel>>(
+            child: FutureBuilder<List<PrescHoursModel>>(
               future: _hoursIrrig,
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
@@ -57,7 +57,7 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
                   return ListView(
                     children: snapshot.data.map<Widget>((alarm) {
                       var alarmTime = DateFormat('hh:mm aa')
-                          .format(alarm.IrrigHourDateTime);
+                          .format(alarm.PrescHourDateTime);
                       var gradientColor = GradientTemplate
                           .gradientTemplate[alarm.gradientColorIndex].colors;
                       return Container(
@@ -139,7 +139,7 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
                         ),
                       );
                     }).followedBy([
-                      if (_currentHoursI.length < 2)
+                      if (_currentHoursI.length < 1)
                         DottedBorder(
                           strokeWidth: 2,
                           color: CustomColors.clockOutline,
@@ -263,7 +263,7 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
                       else
                         Center(
                             child: Text(
-                          'Only 2 Irrigation Hours  allowed!',
+                          'Only 1 Prescription Hour allowed!',
                           style: TextStyle(color: Colors.white),
                         )),
                     ]).toList(),
@@ -284,7 +284,7 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
   }
 
   void scheduleAlarm(DateTime scheduledNotificationDateTime,
-      IrrigHoursModel IrrigHoursModel) async {
+      PrescHoursModel PrescHoursModel) async {
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'alarm_notif',
       'alarm_notif',
@@ -302,31 +302,81 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
     // var platformChannelSpecifics = NotificationDetails(
     //     androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
 
-    // await flutterLocalNotificationsPlugin.schedule(0, 'Office', IrrigHoursModel.title,
+    // await flutterLocalNotificationsPlugin.schedule(0, 'Office', PrescHoursModel.title,
     //     scheduledNotificationDateTime, platformChannelSpecifics);
   }
 
-  void onSaveAlarm() {
-    DateTime scheduleIrrigHourDateTime;
-    if (_hourTime.isAfter(DateTime.now()))
-      scheduleIrrigHourDateTime = _hourTime;
-    else
-      scheduleIrrigHourDateTime = _hourTime.add(Duration(days: 1));
+  Widget _cropProperties(idgradient, title, subtitle) {
+    var gradientColor = GradientTemplate.gradientTemplate[idgradient].colors;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColor,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+                color: gradientColor.last.withOpacity(0.4),
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: Offset(4, 4))
+          ],
+          borderRadius: BorderRadius.all(Radius.circular(25))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(children: <Widget>[
+            Icon(
+              Icons.label,
+              color: Colors.white,
+              size: 24,
+            ),
+            SizedBox(width: 8),
+            _textToInfo(title)
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+            _textToInfo(subtitle),
+          ]),
+        ],
+      ),
+    );
+  }
 
-    var irrigHoursModel = IrrigHoursModel(
-      IrrigHourDateTime: scheduleIrrigHourDateTime,
+  Widget _textToInfo(String message) {
+    return Text(
+      message,
+      style: TextStyle(
+          fontFamily: 'avenir',
+          fontWeight: FontWeight.w700,
+          color: CustomColors.primaryTextColor,
+          fontSize: 15),
+    );
+  }
+
+  void onSaveAlarm() {
+    DateTime schedulePrescHourDateTime;
+    if (_hourTime.isAfter(DateTime.now()))
+      schedulePrescHourDateTime = _hourTime;
+    else
+      schedulePrescHourDateTime = _hourTime.add(Duration(days: 1));
+
+    var prescHoursModel = PrescHoursModel(
+      PrescHourDateTime: schedulePrescHourDateTime,
       gradientColorIndex: _currentHoursI.length,
       title: 'Irr.Hour',
     );
-    _hourIrrigDB.insertAlarm(irrigHoursModel);
-    scheduleAlarm(scheduleIrrigHourDateTime, irrigHoursModel);
+    _hourPrescDB.insertAlarm(prescHoursModel);
+    scheduleAlarm(schedulePrescHourDateTime, prescHoursModel);
     Navigator.pop(context);
-    loadIrrigHours();
+    loadPrescHours();
   }
 
   void deleteAlarm(int id) {
-    _hourIrrigDB.delete(id);
+    _hourPrescDB.delete(id);
     //unsubscribe for notification
-    loadIrrigHours();
+    loadPrescHours();
   }
 }

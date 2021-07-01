@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:managents/models/Scopedmodels/PropCropVariables.dart';
 import 'package:managents/view/UserProfilePage.dart';
+import 'package:managents/view/ViewHourIrrig/homepageIrrigation.dart';
+import 'package:managents/view/ViewHourIrrig/homepagePrescription.dart';
 import 'package:scoped_model/scoped_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -17,29 +19,31 @@ class _HomePageCropState extends State<HomePageCrop> {
   Widget build(BuildContext context) {
     return ScopedModel(
         model: model,
-        child: Scaffold(
-          body: Column(children: <Widget>[
-            Container(
-              height: 200,
-              width: MediaQuery.of(context).size.width,
-              padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 10,
-                  bottom: 30,
-                  left: 30,
-                  right: 30.0),
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xff669df4), Color(0xff4e80f3)]),
-                  borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30))),
-              child: _upperContainer(),
-            ),
-            _agentsNames(),
-            _applianceGrid(model)
-          ]),
+        child: SafeArea(
+          child: Scaffold(
+            body: Column(children: <Widget>[
+              Container(
+                height: 190,
+                width: MediaQuery.of(context).size.width,
+                padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 10,
+                    bottom: 25,
+                    left: 30,
+                    right: 30.0),
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xff669df4), Color(0xff4e80f3)]),
+                    borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30))),
+                child: _upperContainer(),
+              ),
+              _agentsNames(),
+              _applianceGrid(model)
+            ]),
+          ),
         ));
   }
 
@@ -170,6 +174,14 @@ class _HomePageCropState extends State<HomePageCrop> {
       onTap: () {
         setState(() {
           model.allYatch[index].isEnable = !model.allYatch[index].isEnable;
+          if (model.allYatch[index].title == "Irrigation") {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (BuildContext context) => HomePageIrrPresc()));
+          }
+          if (model.allYatch[index].title == "Prescription") {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (BuildContext context) => HomePagePrescription()));
+          }
         });
       },
       child: Container(

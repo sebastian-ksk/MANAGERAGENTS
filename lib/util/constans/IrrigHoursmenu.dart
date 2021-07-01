@@ -5,8 +5,10 @@ import '../../models/menu_info.dart';
 List<MenuInfo> menuItems = [
   MenuInfo(MenuType.clock,
       title: 'Clock', imageSource: 'assets/img/clock_icon.png'),
-  MenuInfo(MenuType.alarm,
+  MenuInfo(MenuType.hourIrrig,
       title: 'IrrigHour', imageSource: 'assets/img/alarm_icon.png'),
+  MenuInfo(MenuType.generaldata,
+      title: 'Valv', imageSource: 'assets/img/valvula_Icon.png'),
 ];
 
 List<IrrigHoursModel> alarms = [
