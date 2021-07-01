@@ -9,21 +9,15 @@ class GetFirebaseIrrPresc {
 
   ResultPrescIrrModel presultIrrpresmodel;
 
-  Future<IrrPrescModel> ConsultIrrPresc(String collectionDoc) async {
-    IrrPrescModel irrpresmodel;
-    FirebaseFirestore.instance
+  Future<IrrPrescModel> ConsultIrrPresc() async {
+    DocumentSnapshot data = null;
+    data = await FirebaseFirestore.instance
         .collection('Tibasosa_3')
-        .doc(collectionDoc)
-        .get()
-        .then((DocumentSnapshot documentSnapshot) {
-      if (documentSnapshot.exists) {
-        print('Document data: ${documentSnapshot.data()}');
-        irrpresmodel = IrrPrescModel.fromJson(documentSnapshot.data());
-        return IrrPrescModel.fromJson(documentSnapshot.data());
-      } else {
-        print('Document does not exist on the database');
-      }
-    });
+        .doc('Irrigation-Prescription')
+        .get();
+    if (data.exists) {
+      return IrrPrescModel.fromJson(data.data());
+    }
   }
 
   Future<ResultPrescIrrModel> ConsultResultIrrPresc() async {
