@@ -39,7 +39,7 @@ doc/api/
 ### Firebase Patch ###
 .runtimeconfig.json
 .firebase/
-
+.android/app/google-services.json
 ### Flutter ###
 # Flutter/Dart/Pub related
 **/doc/api/
