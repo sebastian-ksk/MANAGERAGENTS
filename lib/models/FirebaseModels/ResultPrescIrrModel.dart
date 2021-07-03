@@ -19,7 +19,7 @@ class ResultPrescIrrModel {
   factory ResultPrescIrrModel.fromJson(Map<String, dynamic> json) =>
       ResultPrescIrrModel(
         irrigationState:
-            json["IrrigationState "] == null ? null : json["IrrigationState "],
+            json["IrrigationState"] == null ? null : json["IrrigationState"],
         irrigationTime:
             json["IrrigationTime"] == null ? null : json["IrrigationTime"],
         lastIrrigationDate: json["LastIrrigationDate"] == null

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:managents/data/sql/Irrighoursdb.dart';
 import 'package:managents/models/irrigHoursModel.dart';
 import 'package:managents/util/constans/theme_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class IrrigationHoursEdit extends StatefulWidget {
   @override
@@ -17,7 +18,8 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
   HourIrrigDB _hourIrrigDB = HourIrrigDB();
   Future<List<IrrigHoursModel>> _hoursIrrig;
   List<IrrigHoursModel> _currentHoursI;
-
+  CollectionReference prescIrrData =
+      FirebaseFirestore.instance.collection('Tibasosa_3');
   @override
   void initState() {
     _hourTime = DateTime.now();
@@ -293,17 +295,19 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
       sound: RawResourceAndroidNotificationSound('a_long_cold_sting'),
       largeIcon: DrawableResourceAndroidBitmap('codex_logo'),
     );
-
     var iOSPlatformChannelSpecifics = IOSNotificationDetails(
         sound: 'a_long_cold_sting.wav',
         presentAlert: true,
         presentBadge: true,
         presentSound: true);
-    // var platformChannelSpecifics = NotificationDetails(
-    //     androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+  }
 
-    // await flutterLocalNotificationsPlugin.schedule(0, 'Office', IrrigHoursModel.title,
-    //     scheduledNotificationDateTime, platformChannelSpecifics);
+  Future<void> updateData(variable, value) {
+    return prescIrrData
+        .doc('Irrigation-Prescription')
+        .update({variable: value})
+        .then((value) => print("User Updated"))
+        .catchError((error) => print("Failed to update user: $error"));
   }
 
   void onSaveAlarm() {
@@ -311,7 +315,13 @@ class _IrrigationHoursEditState extends State<IrrigationHoursEdit> {
     if (_hourTime.isAfter(DateTime.now()))
       scheduleIrrigHourDateTime = _hourTime;
     else
-      scheduleIrrigHourDateTime = _hourTime.add(Duration(days: 1));
+      scheduleIrrigHourDateTime = _hourTime.add(Duration(days: 365));
+
+    if (_currentHoursI.length % 2 == 1) {
+      updateData('IrrigationTime_1', _hourTimeString);
+    } else {
+      updateData('IrrigationTime_2', _hourTimeString);
+    }
 
     var irrigHoursModel = IrrigHoursModel(
       IrrigHourDateTime: scheduleIrrigHourDateTime,

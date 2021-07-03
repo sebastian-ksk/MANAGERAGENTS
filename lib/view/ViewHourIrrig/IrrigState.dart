@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:managents/data/Firebase/IrrPrescGet.dart';
+import 'package:managents/models/FirebaseModels/IrrigationPropertiesModel.dart';
+import 'package:managents/models/FirebaseModels/ResultPrescIrrModel.dart';
 import 'package:managents/util/constans/theme_data.dart';
 
 class IrrigationState extends StatefulWidget {
@@ -8,32 +11,87 @@ class IrrigationState extends StatefulWidget {
 
 class _IrrigationStateState extends State<IrrigationState> {
   var gradientColor = GradientTemplate.gradientTemplate[0].colors;
+  IrrigationPModel irrigationProp;
+
+  @override
+  void initState() {
+    super.initState();
+    _parameterInitializacon();
+  }
+
+  _parameterInitializacon() async {
+    irrigationProp = await GetFirebaseIrrPresc().ConsultIrrigationProperties();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 64),
-      child: Column(
-        children: <Widget>[
-          Text(
-            'Irrigation State',
-            style: TextStyle(
-                fontFamily: 'avenir',
-                fontWeight: FontWeight.w700,
-                color: CustomColors.primaryTextColor,
-                fontSize: 24),
-          ),
-          Image.asset(
-            'assets/img/valveOpen.png',
-            height: 100,
-          ),
-          _cropProperties(0, 'Valve State:', 'OFF'),
-          _cropProperties(2, 'Last Date Irrigation :', '2021-06-11'),
-          _cropProperties(0, 'Irrigation Time:', '0'),
-          _cropProperties(2, 'Irrigation Applied:', '0'),
-          _cropPropertiesNochanges(1, 'Irrigation Applied:', '0')
-        ],
-      ),
-    );
+    return StreamBuilder<ResultPrescIrrModel>(
+        stream: GetFirebaseIrrPresc().ConsultResultIrrPrescStream(),
+        builder: (_, AsyncSnapshot<ResultPrescIrrModel> snapshot) {
+          List<Widget> children;
+          if (snapshot.hasData) {
+            children = <Widget>[
+              Text(
+                'Irrigation State',
+                style: TextStyle(
+                    fontFamily: 'avenir',
+                    fontWeight: FontWeight.w700,
+                    color: CustomColors.primaryTextColor,
+                    fontSize: 24),
+              ),
+              Image.asset(
+                snapshot.data.irrigationState == 'on'
+                    ? 'assets/img/valveOpen.png'
+                    : 'assets/img/valveClosed.png',
+                height: 80,
+              ),
+              _cropProperties(
+                  0, 'Valve State:', snapshot.data?.irrigationState ?? 'Indf'),
+              _cropProperties(2, 'Last Date Irrigation :',
+                  snapshot.data?.lastIrrigationDate ?? '0/0/0'),
+              _cropProperties(0, 'Irrigation Time:',
+                  snapshot.data?.irrigationTime.toString() ?? 'indf'),
+              _cropProperties(2, 'Irrigation Applied:',
+                  snapshot.data?.irrigationApplied.toString() ?? 'indf'),
+              _cropPropertiesNochanges(
+                1,
+                irrigationProp?.nominalDischarge?.toString() ?? '0',
+                irrigationProp?.area?.toString() ?? '0',
+                irrigationProp?.drippers?.toString() ?? '0',
+                irrigationProp?.efficiency?.toString() ?? '0',
+              )
+            ];
+          } else if (snapshot.hasError) {
+            children = <Widget>[
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 60,
+              ),
+            ];
+          } else {
+            children = <Widget>[
+              SizedBox(
+                child: CircularProgressIndicator(),
+                width: 60,
+                height: 60,
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Text('Awaiting for Results'),
+              )
+            ];
+          }
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: double.infinity,
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+            child: Column(
+              children: children,
+            ),
+          );
+        });
   }
 
   Widget _cropProperties(idgradient, title, subtitle) {
@@ -75,9 +133,13 @@ class _IrrigationStateState extends State<IrrigationState> {
     );
   }
 
-  Widget _cropPropertiesNochanges(idgradient, title, subtitle) {
+  Widget _cropPropertiesNochanges(
+      idgradient, NomDischarge, Area, drippers, Efficience) {
     var gradientColor = GradientTemplate.gradientTemplate[idgradient].colors;
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: double.infinity,
+      ),
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -97,6 +159,20 @@ class _IrrigationStateState extends State<IrrigationState> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          Column(
+            children: [
+              Row(children: <Widget>[
+                Icon(
+                  Icons.label,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                SizedBox(width: 8),
+                _textToInfo('Nom Discharge : '),
+              ]),
+              _textToInfo(NomDischarge),
+            ],
+          ),
           Row(children: <Widget>[
             Icon(
               Icons.label,
@@ -104,7 +180,7 @@ class _IrrigationStateState extends State<IrrigationState> {
               size: 24,
             ),
             SizedBox(width: 8),
-            _textToInfo('Nom Discharge : ' + subtitle),
+            _textToInfo('Area : ' + Area),
           ]),
           Row(children: <Widget>[
             Icon(
@@ -113,7 +189,7 @@ class _IrrigationStateState extends State<IrrigationState> {
               size: 24,
             ),
             SizedBox(width: 8),
-            _textToInfo('Area : ' + subtitle),
+            _textToInfo('# Dripers : ' + drippers)
           ]),
           Row(children: <Widget>[
             Icon(
@@ -122,16 +198,7 @@ class _IrrigationStateState extends State<IrrigationState> {
               size: 24,
             ),
             SizedBox(width: 8),
-            _textToInfo('# Dripers : ' + subtitle),
-          ]),
-          Row(children: <Widget>[
-            Icon(
-              Icons.label,
-              color: Colors.white,
-              size: 24,
-            ),
-            SizedBox(width: 8),
-            _textToInfo('Efficiency : ' + subtitle),
+            _textToInfo('Efficiency : ' + Efficience),
           ]),
         ],
       ),

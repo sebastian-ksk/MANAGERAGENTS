@@ -28,7 +28,7 @@ class _PrescriptionStateState extends State<PrescriptionState> {
   ResultPrescIrrModel resultPrescIrrModel;
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  CollectionReference users =
+  CollectionReference prescIrrData =
       FirebaseFirestore.instance.collection('Tibasosa_3');
 
   @override
@@ -134,7 +134,7 @@ class _PrescriptionStateState extends State<PrescriptionState> {
   }
 
   Future<void> updateData(variable, value) {
-    return users
+    return prescIrrData
         .doc('Irrigation-Prescription')
         .update({variable: value})
         .then((value) => print("User Updated"))

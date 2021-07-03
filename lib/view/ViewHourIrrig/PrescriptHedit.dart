@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:managents/data/sql/preschoursdb.dart';
 import 'package:managents/models/PrescHoursModel.dart';
 import 'package:managents/util/constans/theme_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PrescriptionHoursEdit extends StatefulWidget {
   @override
@@ -17,7 +18,8 @@ class _PrescriptionHoursEditState extends State<PrescriptionHoursEdit> {
   HourPrescDB _hourPrescDB = HourPrescDB();
   Future<List<PrescHoursModel>> _hoursIrrig;
   List<PrescHoursModel> _currentHoursI;
-
+  CollectionReference prescIrrData =
+      FirebaseFirestore.instance.collection('Tibasosa_3');
   @override
   void initState() {
     _hourTime = DateTime.now();
@@ -361,7 +363,9 @@ class _PrescriptionHoursEditState extends State<PrescriptionHoursEdit> {
     if (_hourTime.isAfter(DateTime.now()))
       schedulePrescHourDateTime = _hourTime;
     else
-      schedulePrescHourDateTime = _hourTime.add(Duration(days: 1));
+      schedulePrescHourDateTime = _hourTime.add(Duration(days: 365));
+
+    updateData('PrescriptionTime', _hourTimeString);
 
     var prescHoursModel = PrescHoursModel(
       PrescHourDateTime: schedulePrescHourDateTime,
@@ -372,6 +376,14 @@ class _PrescriptionHoursEditState extends State<PrescriptionHoursEdit> {
     scheduleAlarm(schedulePrescHourDateTime, prescHoursModel);
     Navigator.pop(context);
     loadPrescHours();
+  }
+
+  Future<void> updateData(variable, value) {
+    return prescIrrData
+        .doc('Irrigation-Prescription')
+        .update({variable: value})
+        .then((value) => print("User Updated"))
+        .catchError((error) => print("Failed to update user: $error"));
   }
 
   void deleteAlarm(int id) {

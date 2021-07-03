@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class IrrigationPModel {
-  String area;
-  String drippers;
-  String efficiency;
-  String nominalDischarge;
+  num area;
+  num drippers;
+  num efficiency;
+  num nominalDischarge;
 
   IrrigationPModel(
       {@required this.area,
@@ -12,10 +12,18 @@ class IrrigationPModel {
       @required this.efficiency,
       @required this.nominalDischarge});
 
-  Map<String, String> toJson() => {
-        "dev_id": this.area,
+  Map<String, dynamic> toJson() => {
+        "area": this.area,
         "drippers": this.drippers,
-        "dev_description": this.efficiency,
-        "dev_tech": this.nominalDischarge,
+        "efficiency": this.efficiency,
+        "nominalDischarge": this.nominalDischarge,
       };
+  factory IrrigationPModel.fromJson(Map<String, dynamic> json) =>
+      IrrigationPModel(
+        area: json["area"] == null ? null : json["area"],
+        drippers: json["drippers"] == null ? null : json["drippers"],
+        efficiency: json["efficiency"] == null ? null : json["efficiency"],
+        nominalDischarge:
+            json["nominalDischarge"] == null ? null : json["nominalDischarge"],
+      );
 }

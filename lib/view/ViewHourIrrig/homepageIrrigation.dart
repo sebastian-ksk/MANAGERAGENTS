@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:managents/util/colors.dart';
 import 'package:managents/util/constans/enumMenuLateral.dart';
 import 'package:managents/models/menu_info.dart';
 import 'package:managents/util/constans/theme_data.dart';
@@ -17,47 +18,52 @@ class _HomePageIrrPrescState extends State<HomePageIrrPresc> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: CustomColors.pageBackgroundColor,
-      body: Row(
-        children: <Widget>[
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: menuItems
-                .map((currentMenuInfo) => buildMenuButton(currentMenuInfo))
-                .toList(),
-          ),
-          VerticalDivider(
-            color: CustomColors.dividerColor,
-            width: 1,
-          ),
-          Expanded(
-            child: Consumer<MenuInfo>(
-              builder: (BuildContext context, MenuInfo value, Widget child) {
-                if (value.menuType == MenuType.clock)
-                  return ClockPage();
-                else if (value.menuType == MenuType.hourIrrig)
-                  return IrrigationHoursEdit();
-                else if (value.menuType == MenuType.generaldata)
-                  return IrrigationState();
-                else
-                  return Container(
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(fontSize: 20),
-                        children: <TextSpan>[
-                          TextSpan(text: 'Upcoming Tutorial\n'),
-                          TextSpan(
-                            text: value.title,
-                            style: TextStyle(fontSize: 48),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-              },
+      backgroundColor: colorAzulApp,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          print('refresh');
+        },
+        child: Row(
+          children: <Widget>[
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: menuItems
+                  .map((currentMenuInfo) => buildMenuButton(currentMenuInfo))
+                  .toList(),
             ),
-          ),
-        ],
+            VerticalDivider(
+              color: CustomColors.dividerColor,
+              width: 1,
+            ),
+            Expanded(
+              child: Consumer<MenuInfo>(
+                builder: (BuildContext context, MenuInfo value, Widget child) {
+                  if (value.menuType == MenuType.clock)
+                    return ClockPage();
+                  else if (value.menuType == MenuType.hourIrrig)
+                    return IrrigationHoursEdit();
+                  else if (value.menuType == MenuType.generaldata)
+                    return IrrigationState();
+                  else
+                    return Container(
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(fontSize: 20),
+                          children: <TextSpan>[
+                            TextSpan(text: 'Upcoming Tutorial\n'),
+                            TextSpan(
+                              text: value.title,
+                              style: TextStyle(fontSize: 48),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
