@@ -13,7 +13,7 @@ class ConnectedModel extends Model {
         isEnable: true),
     CropVariable(
         title: 'Sensors',
-        subtitle: '22 °C',
+        subtitle: '23 °C',
         leftIcon: FontAwesomeIcons.thermometer,
         isEnable: false),
     CropVariable(

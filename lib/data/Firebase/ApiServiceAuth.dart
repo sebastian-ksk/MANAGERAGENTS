@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Authentication with ChangeNotifier {
@@ -19,6 +17,7 @@ class Authentication with ChangeNotifier {
       User user = authResult.user;
       print(' verificado?  ');
       print(user.email);
+      print(user.getIdTokenResult());
       if (user.email.isNotEmpty) {
         setLoading(false);
       }

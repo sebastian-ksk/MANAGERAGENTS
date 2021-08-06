@@ -55,4 +55,13 @@ class GetFirebaseIrrPresc {
       return IrrigationPModel.fromJson(data.data());
     }
   }
+
+  Future ConsultColllctions() async {
+    QuerySnapshot data = null;
+    data = await FirebaseFirestore.instance
+        .collectionGroup('manageragnts-119d1')
+        // ignore: deprecated_member_use
+        .getDocuments();
+    print(data.docChanges);
+  }
 }
