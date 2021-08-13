@@ -36,11 +36,11 @@ class ResultPrescIrrModel {
       );
 
   Map<String, dynamic> toJson() => {
-        "dev_id": this.irrigationState,
-        "dev_name": this.irrigationTime,
-        "dev_description": this.lastIrrigationDate,
-        "dev_tech": this.lastPrescriptionDate,
-        "dev_type": this.netPrescription,
-        "dev_maker": this.irrigationApplied,
+        "IrrigationState": this.irrigationState,
+        "IrrigationTime": this.irrigationTime,
+        "LastIrrigationDate": this.lastIrrigationDate,
+        "LastPrescriptionDate": this.lastPrescriptionDate,
+        "NetPrescription": this.netPrescription,
+        "irrigationApplied": this.irrigationApplied,
       };
 }

@@ -1,5 +1,11 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:managents/data/Firebase/ApiServiceAuth.dart';
+import 'package:managents/models/authentication/user.dart';
+import 'package:managents/providers/HomePageProvider.dart';
+import 'package:managents/splash/splash_page.dart';
 import 'package:managents/util/constans/enumMenuLateral.dart';
 import 'package:managents/models/menu_info.dart';
 import 'package:managents/view/UserProfilePage.dart';
@@ -25,39 +31,53 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   //  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
   String route = '/Login';
+
+  // @override
+  // void initState() {
+  //   checkLoginStatus();
+  //   super.initState();
+  // }
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => MenuInfo(MenuType.clock)),
-        ChangeNotifierProvider(create: (context) => Authentication())
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Manager Agents',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
-        initialRoute: route,
-        onGenerateRoute: (settings) {
-          switch (settings.name) {
-            case '/Login':
-              return MaterialPageRoute(builder: (context) => new LoginPage());
-            case '/user': //pagina de login
-              return MaterialPageRoute(
-                  builder: (context) => new UserProfilePage());
-            case '/HomeCrop':
-              return MaterialPageRoute(
-                  builder: (context) => new HomePageCrop());
-            case '/IrrigProg':
-              return MaterialPageRoute(
-                  builder: (context) => new HomePageIrrPresc());
-            default:
-              return null;
-          }
-        },
-      ),
+    return MultiProvider(providers: [
+      ChangeNotifierProvider(create: (context) => MenuInfo(MenuType.clock)),
+      ChangeNotifierProvider(create: (context) => Authentication()),
+      ChangeNotifierProvider(create: (context) => HomePageProvider())
+    ], child: InitApp());
+  }
+}
+
+class InitApp extends StatefulWidget {
+  @override
+  _InitAppState createState() => _InitAppState();
+}
+
+class _InitAppState extends State<InitApp> {
+  Future<UserApp> checkLoginStatus() async {
+    UserApp user = await Authentication().isSignedIn();
+    print('user: ${user.email}');
+    return user;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Manager Agents',
+      home: FutureBuilder<UserApp>(
+          future: Authentication().isSignedIn(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return HomePageCrop(
+                currentUser: snapshot.data,
+              );
+            } else if (snapshot.hasError) {
+              print(snapshot.error);
+              return LoginPage();
+            }
+            return SplashPage();
+          }),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:managents/data/Firebase/ApiServiceAuth.dart';
+import 'package:managents/models/authentication/user.dart';
 import 'package:managents/util/colors.dart';
 import 'package:managents/util/constans/theme_data.dart';
 import 'package:managents/util/customViews.dart';
@@ -196,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                 logButton = !logButton;
                 setState(() => logincharge = true);
                 try {
-                  User userLogin = await Authentication().Login(
+                  UserApp userLogin = await Authentication().Login(
                       username: _textEditingControllerEmail.text,
                       password: _textEditingControllerPasword.text);
                   print('verificado usuario? ');
@@ -207,7 +208,9 @@ class _LoginPageState extends State<LoginPage> {
                     // _userProv.userEnabled = user;
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
-                          builder: (BuildContext context) => HomePageCrop()),
+                          builder: (BuildContext context) => HomePageCrop(
+                                currentUser: userLogin,
+                              )),
                       (Route<dynamic> route) => false,
                     );
                     setState(() => logincharge = false);

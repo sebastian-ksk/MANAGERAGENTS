@@ -1,36 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:managents/data/Firebase/ApiServiceAuth.dart';
+import 'package:managents/data/Firebase/ConsultFirebaseHomePage.dart';
 import 'package:managents/data/Firebase/IrrPrescGet.dart';
+import 'package:managents/models/FirebaseModels/agentModel.dart';
+import 'package:managents/models/authentication/user.dart';
+import 'package:managents/providers/HomePageProvider.dart';
 import 'package:managents/util/colors.dart';
 import 'package:managents/view/CreateNewCrop.dart';
 import 'package:managents/view/UserProfilePage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:managents/view/ViewHourIrrig/homepageIrrigation.dart';
 import 'package:managents/view/ViewHourIrrig/homepagePrescription.dart';
+import 'package:managents/view/loginPage.dart';
 import 'package:managents/view/viewSensorsCrop.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:managents/models/FirebaseModels/RegisterAgentModel.dart';
+import 'package:provider/provider.dart';
 
 class HomePageCrop extends StatefulWidget {
+  UserApp currentUser;
+  HomePageCrop({
+    Key key,
+    @required this.currentUser,
+  });
   @override
   _HomePageCropState createState() => _HomePageCropState();
 }
 
 class _HomePageCropState extends State<HomePageCrop> {
-  List<String> cropsAgents = ['Tibasosa_1', 'Tibasosa_2', 'Tibasosa_3'];
-  String actualCrop;
+  List<String> cropsAgents = [];
+  String _actualCrop;
+  UserApp user = UserApp();
+  String nameuser;
+  AgentModel currentAgent = AgentModel();
+  final DateFormat formatter = DateFormat.yMMMMd('en_US');
+
+  Stream<QuerySnapshot> _listAgents =
+      FirebaseFirestore.instance.collection('user').snapshots();
 
   @override
   void initState() {
     print('alldocuments');
+    user = widget.currentUser;
+    _listAgents = FirebaseFirestore.instance.collection(user.name).snapshots();
     loadinfoDataFireBase();
     super.initState();
   }
 
-  void loadinfoDataFireBase() {
-    GetFirebaseIrrPresc().ConsultColllctions();
-  }
+  void loadinfoDataFireBase() {}
 
   @override
   Widget build(BuildContext context) {
+    final _agentProperties = Provider.of<HomePageProvider>(context);
     return SafeArea(
       child: Scaffold(
         drawer: Theme(
@@ -76,7 +99,10 @@ class _HomePageCropState extends State<HomePageCrop> {
                                               MaterialPageRoute(
                                                   builder:
                                                       (BuildContext context) =>
-                                                          CreateNewCrop()));
+                                                          CreateNewCrop(
+                                                            currentUser: widget
+                                                                .currentUser,
+                                                          )));
                                         },
                                         leading: Icon(
                                           Icons.add,
@@ -107,43 +133,96 @@ class _HomePageCropState extends State<HomePageCrop> {
                     height: 50,
                   ),
                   Expanded(
-                    child: ListView.builder(
-                        itemCount: cropsAgents.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return new Card(
-                              elevation: 2,
-                              color: colorAppBar,
-                              child: InkWell(
-                                splashColor: Colors.blue.withAlpha(30),
-                                onTap: () {
-                                  print('Card tapped.');
-                                  Navigator.of(context)
-                                      .pop(Duration(seconds: 2));
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      FontAwesomeIcons.seedling,
-                                      color: Colors.black,
-                                      size: 25,
-                                    ),
-                                    SizedBox(height: 10),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 30, right: 10),
-                                      child: Text(
-                                        cropsAgents[index],
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'OpenSans',
-                                          fontSize: 20,
+                    child: StreamBuilder<QuerySnapshot>(
+                        stream: _listAgents,
+                        builder: (BuildContext context,
+                            AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (snapshot.hasError) {
+                            return Text('Something went wrong');
+                          }
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Text("Loading");
+                          }
+                          if (snapshot.hasData) {
+                            print('ok');
+
+                            List<String> listProb = [];
+                            for (int i = 0;
+                                i < snapshot.data.docs.length;
+                                i++) {
+                              var a = snapshot.data.docs[i];
+                              listProb.add('${a.id}');
+                              print(a.id);
+                            }
+                            _agentProperties.listAgents = listProb;
+
+                            return ListView.builder(
+                                itemCount: snapshot.data.docs.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return new Card(
+                                      elevation: 2,
+                                      color: colorAppBar,
+                                      child: InkWell(
+                                        splashColor: Colors.blue.withAlpha(30),
+                                        onTap: () {
+                                          print('Card tapped.');
+                                          setState(() {
+                                            _agentProperties.actualAgen =
+                                                _agentProperties
+                                                    .listAgents[index];
+                                          });
+                                          Navigator.of(context)
+                                              .pop(Duration(seconds: 2));
+                                          setState(() async {
+                                            currentAgent =
+                                                await ConsultFirebaseHomePage()
+                                                    .consultMode(
+                                                        '${widget.currentUser.name}.${_agentProperties.actualAgen}');
+                                            _agentProperties.irrigationApplied =
+                                                currentAgent
+                                                    .resultIrrigationPrescription
+                                                    .irrigationApplied
+                                                    .toString();
+                                            _agentProperties
+                                                    .prescriptionApplied =
+                                                currentAgent
+                                                    .resultIrrigationPrescription
+                                                    .netPrescription
+                                                    .toString();
+                                            _agentProperties.typeCrop =
+                                                currentAgent.crop.typeCrop
+                                                    .toString();
+                                          });
+                                        },
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              FontAwesomeIcons.seedling,
+                                              color: Colors.black,
+                                              size: 25,
+                                            ),
+                                            SizedBox(height: 10),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 30, right: 10),
+                                              child: Text(
+                                                snapshot.data.docs[index].id,
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'OpenSans',
+                                                  fontSize: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ));
+                                      ));
+                                });
+                          }
+                          return ListView();
                         }),
                   ),
                   Card(
@@ -151,7 +230,13 @@ class _HomePageCropState extends State<HomePageCrop> {
                       color: colorAppBar,
                       child: ListTile(
                         onTap: () {
+                          Authentication().logout();
                           Navigator.of(context).pop(Duration(seconds: 2));
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                                builder: (BuildContext context) => LoginPage()),
+                            (Route<dynamic> route) => false,
+                          );
                         },
                         leading: Icon(
                           Icons.logout,
@@ -194,43 +279,49 @@ class _HomePageCropState extends State<HomePageCrop> {
                     borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(30),
                         bottomRight: Radius.circular(30))),
-                child: _upperContainer(),
+                child: _upperContainer(widget.currentUser, context),
               ),
-              _agentsNames(),
-              Container(
-                  alignment: Alignment.topCenter,
-                  //padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                  height: MediaQuery.of(context).size.height * (5 / 8),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    padding: EdgeInsets.all(0),
-                    children: <Widget>[
-                      _buildSingleCArd(
-                        'Irrigation',
-                        0,
-                        FontAwesomeIcons.water,
-                        '3.0 mm',
-                      ),
-                      _buildSingleCArd(
-                        'Sensors',
-                        1,
-                        FontAwesomeIcons.thermometer,
-                        '3.0 mm',
-                      ),
-                      _buildSingleCArd(
-                        'Prescription',
-                        2,
-                        FontAwesomeIcons.eyeDropper,
-                        '3.0 mm',
-                      ),
-                      _buildSingleCArd(
-                        'Crop',
-                        3,
-                        FontAwesomeIcons.seedling,
-                        '3.0 mm',
-                      )
-                    ],
-                  )),
+              _agentsNames(context),
+              SingleChildScrollView(
+                child: Container(
+                    alignment: Alignment.topCenter,
+                    //padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    height: MediaQuery.of(context).size.height * (5 / 8),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      padding: EdgeInsets.all(0),
+                      children: <Widget>[
+                        _buildSingleCArd(
+                          'Irrigation',
+                          0,
+                          FontAwesomeIcons.water,
+                          '${_agentProperties?.irrigationApplied ?? '.'} mm',
+                          context,
+                        ),
+                        _buildSingleCArd(
+                          'Sensors',
+                          1,
+                          FontAwesomeIcons.thermometer,
+                          '3.0 mm',
+                          context,
+                        ),
+                        _buildSingleCArd(
+                          'Prescription',
+                          2,
+                          FontAwesomeIcons.eyeDropper,
+                          '${_agentProperties?.prescriptionApplied ?? '.'} mm',
+                          context,
+                        ),
+                        _buildSingleCArd(
+                          'Crop',
+                          3,
+                          FontAwesomeIcons.seedling,
+                          '${_agentProperties?.typeCrop ?? '...'}',
+                          context,
+                        )
+                      ],
+                    )),
+              ),
             ]),
             Positioned(
                 width: MediaQuery.of(context).size.width,
@@ -245,7 +336,9 @@ class _HomePageCropState extends State<HomePageCrop> {
     );
   }
 
-  Widget _upperContainer() {
+  Widget _upperContainer(UserApp currentUser, BuildContext context) {
+    final _agentProperties = Provider.of<HomePageProvider>(context);
+    final DateTime now = DateTime.now();
     return Container(
       alignment: Alignment.topLeft,
       padding: EdgeInsets.all(0),
@@ -259,11 +352,11 @@ class _HomePageCropState extends State<HomePageCrop> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'July 16 2021',
+                    '${formatter.format(now)}',
                     style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                   Text(
-                    'Hello Sebastian!',
+                    'Hello ${currentUser.name}!',
                     style: TextStyle(color: Colors.white, fontSize: 20),
                   ),
                 ],
@@ -307,7 +400,7 @@ class _HomePageCropState extends State<HomePageCrop> {
                   Row(
                     children: <Widget>[
                       Text(
-                        '1.0',
+                        '${_agentProperties?.irrigationApplied ?? '...'}',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -317,7 +410,7 @@ class _HomePageCropState extends State<HomePageCrop> {
                         width: 10,
                       ),
                       Text(
-                        'Lts',
+                        'mm',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -338,7 +431,8 @@ class _HomePageCropState extends State<HomePageCrop> {
     );
   }
 
-  Widget _agentsNames() {
+  Widget _agentsNames(BuildContext context) {
+    final _agentProperties = Provider.of<HomePageProvider>(context);
     return Container(
       padding: EdgeInsets.only(left: 10, top: 10, bottom: 10),
       child: SingleChildScrollView(
@@ -346,7 +440,7 @@ class _HomePageCropState extends State<HomePageCrop> {
         child: Row(
           children: <Widget>[
             Text(
-              'Tibasosa 1',
+              _agentProperties?.actualAgen ?? '...',
               style: TextStyle(
                   color: Color(0xff4e80f3),
                   fontSize: 15,
@@ -358,8 +452,9 @@ class _HomePageCropState extends State<HomePageCrop> {
     );
   }
 
-  Widget _buildSingleCArd(
-      String name, int index, IconData iconcard, String subtittle) {
+  Widget _buildSingleCArd(String name, int index, IconData iconcard,
+      String subtittle, BuildContext context) {
+    final _agentProperties = Provider.of<HomePageProvider>(context);
     return new InkWell(
       onTap: () {
         print("ok...");
@@ -367,7 +462,10 @@ class _HomePageCropState extends State<HomePageCrop> {
           print('go');
           if (name == 'Irrigation') {
             Navigator.of(context).push(MaterialPageRoute(
-                builder: (BuildContext context) => HomePageIrrPresc()));
+                builder: (BuildContext context) => HomePageIrrPresc(
+                      currentUser: user.name,
+                      currentAgent: _agentProperties.actualAgen,
+                    )));
           } else if (name == 'Prescription') {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (BuildContext context) => HomePagePrescription()));

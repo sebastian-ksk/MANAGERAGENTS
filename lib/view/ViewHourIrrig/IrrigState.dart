@@ -2,9 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:managents/data/Firebase/IrrPrescGet.dart';
 import 'package:managents/models/FirebaseModels/IrrigationPropertiesModel.dart';
 import 'package:managents/models/FirebaseModels/ResultPrescIrrModel.dart';
+import 'package:managents/models/FirebaseModels/irrigationPrescModel.dart';
+import 'package:managents/providers/HomePageProvider.dart';
 import 'package:managents/util/constans/theme_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
 class IrrigationState extends StatefulWidget {
+  String currentUser;
+  String currentAgent;
+  IrrigationState({
+    Key key,
+    @required this.currentUser,
+    @required this.currentAgent,
+  });
+
   @override
   _IrrigationStateState createState() => _IrrigationStateState();
 }
@@ -12,24 +24,44 @@ class IrrigationState extends StatefulWidget {
 class _IrrigationStateState extends State<IrrigationState> {
   var gradientColor = GradientTemplate.gradientTemplate[0].colors;
   IrrigationPModel irrigationProp;
+  ResultPrescIrrModel resultsAgent;
+  Stream<DocumentSnapshot> _resultAgent = FirebaseFirestore.instance
+      .collection('user')
+      .doc('Irrigation-Prescription')
+      .snapshots();
 
   @override
   void initState() {
+    _resultAgent = FirebaseFirestore.instance
+        .collection('${widget.currentUser}.${widget.currentAgent}')
+        .doc('ResultIrrigation-Prescription')
+        .snapshots();
+
     super.initState();
     _parameterInitializacon();
   }
 
   _parameterInitializacon() async {
-    irrigationProp = await GetFirebaseIrrPresc().ConsultIrrigationProperties();
+    irrigationProp = await GetFirebaseIrrPresc().ConsultIrrigationProperties(
+        '${widget.currentUser}.${widget.currentUser}');
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<ResultPrescIrrModel>(
-        stream: GetFirebaseIrrPresc().ConsultResultIrrPrescStream(),
-        builder: (_, AsyncSnapshot<ResultPrescIrrModel> snapshot) {
+    final _agentProperties = Provider.of<HomePageProvider>(context);
+    return StreamBuilder<DocumentSnapshot>(
+        stream: _resultAgent,
+        builder:
+            (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
           List<Widget> children;
           if (snapshot.hasData) {
+            print(snapshot.data.data());
+            resultsAgent = ResultPrescIrrModel.fromJson(snapshot.data.data());
+            print(resultsAgent.irrigationApplied);
+
+            _agentProperties.irrigationApplied =
+                resultsAgent.irrigationApplied.toString();
+
             children = <Widget>[
               Text(
                 'Irrigation State',
@@ -40,19 +72,19 @@ class _IrrigationStateState extends State<IrrigationState> {
                     fontSize: 24),
               ),
               Image.asset(
-                snapshot.data.irrigationState == 'on'
+                resultsAgent.irrigationState == 'ON'
                     ? 'assets/img/valveOpen.png'
                     : 'assets/img/valveClosed.png',
                 height: 80,
               ),
               _cropProperties(
-                  0, 'Valve State:', snapshot.data?.irrigationState ?? 'Indf'),
+                  0, 'Valve State:', resultsAgent?.irrigationState ?? 'Indf'),
               _cropProperties(2, 'Last Date Irrigation :',
-                  snapshot.data?.lastIrrigationDate ?? '0/0/0'),
+                  resultsAgent?.lastIrrigationDate ?? '0/0/0'),
               _cropProperties(0, 'Irrigation Time:',
-                  snapshot.data?.irrigationTime.toString() ?? 'indf'),
+                  '${resultsAgent?.irrigationTime.toString() ?? '--'} Min'),
               _cropProperties(2, 'Irrigation Applied:',
-                  snapshot.data?.irrigationApplied.toString() ?? 'indf'),
+                  '${resultsAgent?.irrigationApplied.toString() ?? '--'} mm'),
               _cropPropertiesNochanges(
                 1,
                 irrigationProp?.nominalDischarge?.toString() ?? '0',

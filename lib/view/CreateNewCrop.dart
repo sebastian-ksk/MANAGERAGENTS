@@ -1,27 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:managents/data/Firebase/FirebaseCreate.dart';
+import 'package:managents/models/FirebaseModels/CropModel.dart';
+import 'package:managents/models/FirebaseModels/IrrigationPropertiesModel.dart';
+import 'package:managents/models/FirebaseModels/RegisterAgentModel.dart';
+import 'package:managents/models/FirebaseModels/ResultPrescIrrModel.dart';
+import 'package:managents/models/FirebaseModels/agentModel.dart';
+import 'package:managents/models/FirebaseModels/irrigationPrescModel.dart';
+import 'package:managents/models/authentication/user.dart';
 import 'package:managents/util/colors.dart';
 import 'package:managents/view/widgets/dialogs.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'dart:async';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:convert';
 
 class CreateNewCrop extends StatefulWidget {
+  UserApp currentUser;
+  CreateNewCrop({
+    Key key,
+    @required this.currentUser,
+  });
   @override
   _CreateNewCropState createState() => _CreateNewCropState();
 }
 
 class _CreateNewCropState extends State<CreateNewCrop> {
-  List<String> _pumStations = ['Tibasosa', 'SanRafael', 'Monquira'];
-
+  List<String> _pumStations = [
+    'Tibasosa',
+    'SanRafael',
+    'Monquira',
+    'Holanda',
+    'Surba',
+    'Pant.Vargas',
+    'Ayalas',
+    'Duitama',
+    'Las  Vueltas',
+    'Cuche',
+    'Ministerio'
+  ];
   String _pumStationSelect;
 
-  List<String> _crops = ['Potato', 'Onion', 'Tomato'];
+  List<String> _crops = [
+    'Potato',
+    'Maize',
+    'Tomato',
+    'Barley',
+    'Wheat',
+    'Quinoa',
+    'Onion'
+  ];
   String _crop;
 
   DateTime currentDate = DateTime.now();
   DateFormat formatter = DateFormat('dd/MM/yyyy');
-
   TextEditingController _numberPumpStation = new TextEditingController();
   TextEditingController _croppedarea = new TextEditingController();
   TextEditingController _efficiency = new TextEditingController();
@@ -29,10 +61,10 @@ class _CreateNewCropState extends State<CreateNewCrop> {
   TextEditingController _drippers = new TextEditingController();
   TextEditingController _pwp = new TextEditingController();
   TextEditingController _fieldCapacity = new TextEditingController();
-
   double _currentDoubleValue = 2.0;
   int _currentIntValue = 0;
 
+  AgentModel agentToregister = AgentModel();
   @override
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   Widget build(BuildContext context) {
@@ -151,7 +183,7 @@ class _CreateNewCropState extends State<CreateNewCrop> {
                               borderRadius: BorderRadius.circular(20.0),
                             ),
                             child: Text(
-                              "SEED DATE: " + formatter.format(currentDate),
+                              'SEED DATE: ' + formatter.format(currentDate),
                               style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 16,
@@ -167,13 +199,13 @@ class _CreateNewCropState extends State<CreateNewCrop> {
                       Icons.check_circle, 'EFFICIENCY', _efficiency, '%'),
                   SizedBox(height: 5),
                   _tesxtInputData(FontAwesomeIcons.tachometerAlt,
-                      'NOM DISCHARGE', _nominalDischarge, "L/s"),
+                      'NOM DISCHARGE', _nominalDischarge, 'L/s'),
                   SizedBox(height: 5),
                   _tesxtInputData(FontAwesomeIcons.eyeDropper, 'NUM DRIPERS',
                       _drippers, 'U'),
                   SizedBox(height: 5),
                   _tesxtInputData(
-                      FontAwesomeIcons.levelDownAlt, 'PWP %', _pwp, "%"),
+                      FontAwesomeIcons.levelDownAlt, 'PWP %', _pwp, '%'),
                   SizedBox(height: 5),
                   _tesxtInputData(FontAwesomeIcons.levelUpAlt,
                       'FIELD CAPACITY %', _fieldCapacity, '%'),
@@ -203,19 +235,19 @@ class _CreateNewCropState extends State<CreateNewCrop> {
       child: RaisedButton(
         elevation: 5.0,
         onPressed: () {
-          print('Login Botton pressed');
           // verificacion de campos Vacios
-          if (_numberPumpStation.text.isEmpty ||
+          if (_crop == null ||
+              _pumStationSelect == null ||
+              _numberPumpStation.text.isEmpty ||
               _croppedarea.text.isEmpty ||
               _efficiency.text.isEmpty ||
               _nominalDischarge.text.isEmpty ||
               _drippers.text.isEmpty ||
               _pwp.text.isEmpty ||
               _fieldCapacity.text.isEmpty) {
-            Dialogs.dialogBox(context, "Error! Campo vacio", _keyLoader);
+            Dialogs.dialogBox(context, 'Error! Campo vacio', _keyLoader);
           } else {
-            print("ok");
-            // _handleSubmit(context, _keyLoader, itemsSiteProv);
+            _handleSubmit(context, _keyLoader);
           }
         },
         padding: EdgeInsets.all(15.0),
@@ -234,6 +266,102 @@ class _CreateNewCropState extends State<CreateNewCrop> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleSubmit(
+    BuildContext context,
+    GlobalKey<State> _keyLoader,
+  ) async {
+    bool agentexist;
+    bool agentcreate;
+    bool agentcreateGeneral;
+    String _agentToRegister =
+        '${_pumStationSelect}_${_numberPumpStation.text.split('.')[0]}';
+    String _nameUser = widget.currentUser.name;
+    bool resultCreateCollection;
+    print(_agentToRegister);
+    agentexist = await FirebaseCreate().checkRegisterAgent(_agentToRegister);
+    print('ok');
+
+    if (agentexist) {
+      Dialogs.dialogBox(
+          context,
+          "El dispositivo ${_pumStationSelect}_${_numberPumpStation.text.split('.')[0]} ya existe",
+          _keyLoader);
+    } else {
+      print('create new agent in user list');
+      agentcreateGeneral = await FirebaseCreate()
+          .registerNameAgent('RegAgents', _agentToRegister);
+      print('$agentcreateGeneral');
+
+      agentcreate = await FirebaseCreate()
+          .registerNameAgent('${_nameUser}', _agentToRegister);
+
+      if (agentcreateGeneral && agentcreate) {
+        print('create');
+
+        agentToregister = AgentModel(
+            crop: CropModel(
+                daysCrop: 0,
+                typeCrop: _crop.toString(),
+                fieldCapacity: double.parse(_fieldCapacity.text),
+                pwp: double.parse(_pwp.text),
+                seedDate: formatter.format(currentDate)),
+            irrigationProperties: IrrigationPModel(
+                area: double.parse(_croppedarea.text),
+                drippers: double.parse(_drippers.text),
+                efficiency: double.parse(_efficiency.text),
+                nominalDischarge: double.parse(_nominalDischarge.text)),
+            irrigationPrescription: IrrPrescModel(
+              irrigationMethod: 'drip',
+              firstIrrigationTime: '--:--',
+              secondIrrigationTime: '--:--',
+              negotiation: 'true',
+              prescriptionMethod: 'Better',
+              prescriptionTime: '--:--',
+              constanFlow: 0,
+              manualValves: 'OFF',
+            ),
+            resultIrrigationPrescription: ResultPrescIrrModel(
+                irrigationState: 'OFF',
+                irrigationTime: 0,
+                lastIrrigationDate: '-/-/-',
+                lastPrescriptionDate: '-/-/-',
+                netPrescription: 0,
+                irrigationApplied: 0));
+        try {
+          Dialogs.showLoadingDialog(context, _keyLoader); //invoking login
+
+          resultCreateCollection = await FirebaseCreate().createDataBase(
+            '${_nameUser}.${_agentToRegister}',
+            agentToregister,
+          );
+          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+          if (resultCreateCollection) {
+            Dialogs.dialogBox(
+                context,
+                "El Agente ${_nameUser}.${_agentToRegister} fue creado}",
+                _keyLoader);
+            setState(() {
+              _crop = null;
+              _pumStationSelect = null;
+              _numberPumpStation.clear();
+              _croppedarea.clear();
+              _efficiency.clear();
+              _nominalDischarge.clear();
+              _drippers.clear();
+              _pwp.clear();
+              _fieldCapacity.clear();
+            });
+          } else {
+            Dialogs.dialogBox(context,
+                "Error al crear ${_nameUser}.${_agentToRegister}", _keyLoader);
+          }
+        } catch (e) {
+          print(e);
+        }
+      }
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -285,16 +413,16 @@ class _CreateNewCropState extends State<CreateNewCrop> {
               controller: controltext,
               onChanged: (text) {
                 name = text
-                    .replaceAll("-", "")
-                    .replaceAll(" ", "")
-                    .replaceAll(",", ".");
+                    .replaceAll('-', '')
+                    .replaceAll(' ', '')
+                    .replaceAll(',', '.');
               },
               onFieldSubmitted: (text) {
                 var value;
                 final newValue = text
-                    .replaceAll("-", "")
-                    .replaceAll(" ", "")
-                    .replaceAll(",", ".");
+                    .replaceAll('-', '')
+                    .replaceAll(' ', '')
+                    .replaceAll(',', '.');
 
                 try {
                   value = double.parse(newValue);
@@ -302,7 +430,7 @@ class _CreateNewCropState extends State<CreateNewCrop> {
                   print('no es un numero');
                 } finally {
                   print('si es un numero');
-                  if (value > 100 && units == "%") {
+                  if (value > 100 && units == '%') {
                     value = 100.0;
                   }
                   setState(() {
@@ -418,7 +546,7 @@ class _CreateNewCropState extends State<CreateNewCrop> {
           builder: (context, setState) {
             return AlertDialog(
               title: Text(
-                "Efficiency",
+                'Efficiency',
                 style: TextStyle(
                   color: Colors.black54,
                   fontSize: 15,
@@ -444,12 +572,12 @@ class _CreateNewCropState extends State<CreateNewCrop> {
 
                     Navigator.pop(context);
                   },
-                  child: Text("OK"),
+                  child: Text('OK'),
                 ),
                 // ignore: deprecated_member_use
                 FlatButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
+                  child: Text('Cancel'),
                 ),
               ],
             );

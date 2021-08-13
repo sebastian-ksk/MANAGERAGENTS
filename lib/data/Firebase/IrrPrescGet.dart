@@ -45,10 +45,10 @@ class GetFirebaseIrrPresc {
     }
   }
 
-  Future<IrrigationPModel> ConsultIrrigationProperties() async {
+  Future<IrrigationPModel> ConsultIrrigationProperties(String agentname) async {
     DocumentSnapshot data = null;
     data = await FirebaseFirestore.instance
-        .collection('Tibasosa_3')
+        .collection(agentname)
         .doc('Irrigation-Properties')
         .get();
     if (data.exists) {

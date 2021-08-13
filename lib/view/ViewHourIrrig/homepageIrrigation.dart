@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:managents/models/authentication/user.dart';
 import 'package:managents/util/colors.dart';
 import 'package:managents/util/constans/enumMenuLateral.dart';
 import 'package:managents/models/menu_info.dart';
@@ -10,6 +11,14 @@ import 'package:provider/provider.dart';
 import '../../util/constans/IrrigHoursmenu.dart';
 
 class HomePageIrrPresc extends StatefulWidget {
+  String currentUser;
+  String currentAgent;
+  HomePageIrrPresc({
+    Key key,
+    @required this.currentUser,
+    @required this.currentAgent,
+  });
+
   @override
   _HomePageIrrPrescState createState() => _HomePageIrrPrescState();
 }
@@ -43,7 +52,10 @@ class _HomePageIrrPrescState extends State<HomePageIrrPresc> {
                   else if (value.menuType == MenuType.hourIrrig)
                     return IrrigationHoursEdit();
                   else if (value.menuType == MenuType.generaldata)
-                    return IrrigationState();
+                    return IrrigationState(
+                      currentAgent: widget.currentAgent,
+                      currentUser: widget.currentUser,
+                    );
                   else
                     return Container(
                       child: RichText(
